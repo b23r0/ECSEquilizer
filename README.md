@@ -37,6 +37,42 @@ dynamic由调度器根据节点集群健康状态调用ECS节点动态伸缩。
 
 ``` $> ./target/ecsEquilizer ```
 
+# Restful API 身份认证
+
+修改```config.yaml```配置文件中的```authorization```参数添加Key 
+
+在HTTP请求头中添加 ```Authorization : Bearer [vaild-key]```
+
+# Restful API
+
+GET /v1/nodes
+
+```
+Result:
+
+{
+	"nodes":[
+		{
+			"id":"S0",
+			"ip":"127.0.0.1",
+			"port":"1234",
+			"type":"static",
+			"status":"normal"
+		},
+		{
+			"id":"S1",
+			"ip":"127.0.0.1",
+			"port":"4567",
+			"type":"dynamic",
+			"status":"normal"
+		}
+	]
+}
+
+```
+
+# 回调接口
+
 # 业务接入
 
 业务可通过调度器接口，拿到所有节点状态，优先拿出健康状态更好的节点为客户提供服务。

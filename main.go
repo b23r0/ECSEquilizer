@@ -141,7 +141,7 @@ func main() {
 	g_db, _ = connect_db()
 
 	e := echo.New()
-	e.GET("/v1/ecs", get_nodes)
+	e.GET("/v1/nodes", get_nodes)
 	log.Println("listen to " + g_config.SysConfig.Listen)
 
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
