@@ -1,2 +1,45 @@
 # ECSEquilizer
-Build a retractable ECS load balance network through aliyun openapi.
+通过阿里云OpenAPI建立一个可伸缩的负载均衡网络调度器。
+
+# 简介
+
+为确保代理集群网络和计算能力可以通过ECS云服务动态伸缩，所以制定实现以下策略。
+
+节点分为static和dynamic两种，static节点是通过配置文件(`config.yaml`)实现预设的，固定不变。
+
+dynamic由调度器根据节点集群健康状态调用ECS节点动态伸缩。
+
+## 健康状态评估
+
+每个节点有三个状态：Great，Normal，Bad
+
+评估方法用tcping，对每个节点的业务TCP端口ping四次求平均值，延迟小于100ms为great，小于1s为Normal，超过1s为Bad
+
+## 负载均衡策略
+
+调度器每10分钟调度一次，每次调度遵循三个规则。
+
+1. 当static节点状态均大于等于Normal状态（且持续超过1个小时），则释放所有dynamic节点。
+
+2. 当所有节点当中，超过50%的节点状态为Bad，则调度器自动创建N个dynamic节点，使网络状态恢复至50%节点大于等于Normal。
+
+3. 当所有节点中，超过60%的节点状态为大于等于Normal，则持续释放DynamicNode至小于60%。
+
+新创建的节点由于ECS初始化延迟的缘故，健康状态默认为Normal，实际状态由下次调度更新实际状态。
+
+# 编译运行
+
+``` $> make tidy```
+
+``` $> make # 创建https证书.``` 
+
+编辑 ```./target/config.yaml``` 修改配置信息
+
+``` $> ./target/ecsEquilizer ```
+
+# 业务接入
+
+业务可通过调度器接口，拿到所有节点状态，优先拿出健康状态更好的节点为客户提供服务。
+
+调度器提供回调，当有节点被下线，通知业务节点下线。
+
