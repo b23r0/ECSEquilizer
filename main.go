@@ -78,19 +78,67 @@ func init_config(filename string) GlobalConfig {
 	return t
 }
 
+func worker() {
+	g_equilizer.update_nodes()
+
+	for {
+		g_equilizer.update_status()
+
+		nodes := g_equilizer.get_nodes()
+
+		normal := 0
+		bad := 0
+		normal_static := 0
+		static := 0
+
+		for _, s := range nodes {
+
+			if s.Type == "static" {
+				static++
+			}
+
+			if s.Status == "normal" || s.Status == "great" {
+				normal++
+				if s.Type == "static" {
+					normal_static++
+				}
+			}
+			if s.Status == "bad" {
+				bad++
+			}
+		}
+
+		//all static node is normal
+		if static == normal_static {
+			//uninstall all dynamic
+			continue
+		}
+
+		// 50% node is bad
+		stage := float64(bad) / float64(len(nodes))
+		if stage > 0.5 {
+			// calc should create dynamic number
+			// should_num := bad - normal
+			// create n dynamic nodes
+			continue
+		}
+
+		// 50% node is normal
+		if stage < 0.4 {
+			// calc should decrease number
+			// should_num :=  normal - bad
+			// uninstall n dynamic nodes
+			continue
+		}
+	}
+
+}
+
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	g_config = init_config(path.Join(filepath.Dir(os.Args[0]), "config.yaml"))
 	g_ecs = ECSMgr{AccessKeyId: g_config.AliyunConfig.AccessKeyId, AccessSecret: g_config.AliyunConfig.AccessSecret}
 	g_db, _ = connect_db()
-
-	var node DynamicNode
-	node.Ip = "192.168.199.127"
-	node.Port = "7890"
-	node.Status = "normal"
-	g_db.add_dynamic_node(node)
-	g_equilizer.update_nodes()
-	g_equilizer.update_status()
 
 	e := echo.New()
 	e.GET("/v1/ecs", get_nodes)
@@ -107,6 +155,6 @@ func main() {
 			return false, nil
 		},
 	}))
-
+	go worker()
 	e.Logger.Fatal(e.StartTLS(g_config.SysConfig.Listen, path.Join(filepath.Dir(os.Args[0]), "crt/server.crt"), path.Join(filepath.Dir(os.Args[0]), "crt/server.key")))
 }
