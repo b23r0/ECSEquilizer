@@ -84,6 +84,14 @@ func main() {
 	g_ecs = ECSMgr{AccessKeyId: g_config.AliyunConfig.AccessKeyId, AccessSecret: g_config.AliyunConfig.AccessSecret}
 	g_db, _ = connect_db()
 
+	var node DynamicNode
+	node.Ip = "192.168.199.127"
+	node.Port = "7890"
+	node.Status = "normal"
+	g_db.add_dynamic_node(node)
+	g_equilizer.update_nodes()
+	g_equilizer.update_status()
+
 	e := echo.New()
 	e.GET("/v1/ecs", get_nodes)
 	log.Println("listen to " + g_config.SysConfig.Listen)

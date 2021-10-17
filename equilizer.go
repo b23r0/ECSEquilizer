@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -50,26 +52,80 @@ func (p *EquilizerMgr) update_nodes() {
 		record.Type = "dynamic"
 		p.NodeList = append(p.NodeList, record)
 	}
+}
 
-	p.update_status()
+func (p *EquilizerMgr) update_node_status(id string, status string) {
+	for i := 0; i < len(p.NodeList); i++ {
+		if p.NodeList[i].Id == id {
+			p.NodeList[i].Status = status
+
+			if p.NodeList[i].Type == "dynamic" {
+				sid := strings.Split(p.NodeList[i].Id, "D")
+				iid, _ := strconv.Atoi(sid[1])
+				g_db.update_dynamic_status(int64(iid), status)
+			}
+		}
+	}
 }
 
 func (p *EquilizerMgr) get_nodes() []NodeRecord {
 	return p.NodeList
 }
 
-func (p *EquilizerMgr) update_status() {
+func (p *EquilizerMgr) ping(ip string, port string) int64 {
 	pinger := NewTCPing()
+
+	iport, _ := strconv.Atoi(port)
 
 	target := Target{
 		Timeout:  5 * time.Second,
 		Interval: 1 * time.Second,
-		Host:     "127.0.0.1",
-		Port:     1234,
+		Host:     ip,
+		Port:     iport,
 		Counter:  4,
 		Proxy:    "",
 		Protocol: TCP,
 	}
 
 	pinger.SetTarget(&target)
+	pingdone := pinger.Start()
+
+	var a chan os.Signal
+	select {
+	case <-pingdone:
+		break
+	case <-a:
+		break
+	}
+	result := pinger.Result()
+
+	if result.SuccessCounter == 0 {
+		return -1
+	}
+
+	avg := result.TotalDuration / time.Duration(result.SuccessCounter)
+
+	return avg.Milliseconds()
+}
+
+func (p *EquilizerMgr) update_status() {
+
+	nodes := p.get_nodes()
+
+	for _, s := range nodes {
+		t := p.ping(s.Ip, s.Port)
+		if t == -1 {
+			p.update_node_status(s.Id, "Bad")
+			continue
+		} else {
+			if t < 100 {
+				p.update_node_status(s.Id, "great")
+			} else if t < 2000 {
+				p.update_node_status(s.Id, "normal")
+			} else {
+				p.update_node_status(s.Id, "bad")
+			}
+		}
+	}
+
 }

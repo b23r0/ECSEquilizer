@@ -25,7 +25,7 @@ func connect_db() (*DbMgr, error) {
 
 	var db = new(DbMgr)
 
-	db.Db, err = sql.Open("sqlite3", "bot.db?_key=6HMovdn1osi-7r7")
+	db.Db, err = sql.Open("sqlite3", "a.db?_key=6HMovdn1osi-7r7")
 	if err != nil {
 		log.Println(err)
 		return db, err
@@ -37,7 +37,23 @@ func connect_db() (*DbMgr, error) {
 		log.Println(err)
 		return db, err
 	}
+	db.init()
 	return db, err
+}
+
+func (p *DbMgr) init() {
+	_, err := p.Db.Exec(`CREATE TABLE "nodes" (
+		"id"	INTEGER NOT NULL,
+		"ip"	TEXT NOT NULL,
+		"port"	TEXT NOT NULL,
+		"status"	TEXT NOT NULL,
+		PRIMARY KEY("id" AUTOINCREMENT)
+	);`)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func (p *DbMgr) close() {
@@ -46,7 +62,7 @@ func (p *DbMgr) close() {
 
 func (p *DbMgr) get_dynamic_nodes() ([]DynamicNode, error) {
 	var ret []DynamicNode
-	rows, err := p.Db.Query("SELECT id , ip , port , status FROM dynamic_nodes;")
+	rows, err := p.Db.Query("SELECT id , ip , port , status FROM nodes;")
 	if err != nil {
 		return ret, err
 	}
@@ -62,7 +78,7 @@ func (p *DbMgr) get_dynamic_nodes() ([]DynamicNode, error) {
 }
 
 func (p *DbMgr) add_dynamic_node(node DynamicNode) (bool, error) {
-	sql := fmt.Sprintf(`insert into nodes values("%s","%s","%s");`, node.Ip, node.Port, node.Status)
+	sql := fmt.Sprintf(`insert into nodes(ip , port , status) values("%s","%s","%s");`, node.Ip, node.Port, node.Status)
 	log.Println(sql)
 	_, err := p.Db.Exec(sql)
 	if err != nil {
@@ -71,7 +87,7 @@ func (p *DbMgr) add_dynamic_node(node DynamicNode) (bool, error) {
 	return true, err
 }
 func (p *DbMgr) update_dynamic_status(id int64, status string) error {
-	sql := fmt.Sprintf(`update node set status="%s" where id=%d;`, status, id)
+	sql := fmt.Sprintf(`update nodes set status="%s" where id=%d;`, status, id)
 	_, err := p.Db.Exec(sql)
 
 	if err != nil {
