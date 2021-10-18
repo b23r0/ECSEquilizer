@@ -14,6 +14,9 @@ all:
 tidy:
 	go mod tidy
 
+test:
+	go test
+
 clean:  
 	rm -rf ./target
 	rm -rf server.crt

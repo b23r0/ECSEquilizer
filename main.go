@@ -26,6 +26,7 @@ type GlobalConfig struct {
 		TcpingPort         string `yaml:"tcping_port"`
 		WorkInternalSecond int    `yaml:"work_internal_second"`
 		HTTPSCallback      string `yaml:"https_callback"`
+		HTTPSCallbackAuth  string `yaml:"https_callback_auth"`
 	} `yaml:"sys_config"`
 	AliyunConfig struct {
 		AccessKeyID  string `yaml:"access_key_id"`
@@ -49,12 +50,6 @@ type NodeModel struct {
 	Port   string `json:"port"`
 	Type   string `json:"type"`
 	Status string `json:"status"`
-}
-
-type CallbackModel struct {
-	ID     string `json:"id"`
-	IP     string `json:"ip"`
-	Action string `json:"action"`
 }
 
 type GetNodesRetModel struct {
