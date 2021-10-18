@@ -10,11 +10,12 @@ import (
 )
 
 type NodeRecord struct {
-	Id     string
-	Ip     string
-	Port   string
-	Type   string
-	Status string
+	Id         string
+	Ip         string
+	Port       string
+	Type       string
+	Status     string
+	InstanceId string
 }
 
 type EquilizerMgr struct {
@@ -54,7 +55,7 @@ func (p *EquilizerMgr) update_nodes() {
 	}
 }
 
-func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string) {
+func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string, instanceid string) string {
 
 	var node DynamicNode
 	node.Ip = ip
@@ -76,6 +77,24 @@ func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string) {
 	record.Type = "dynamic"
 
 	p.NodeList = append(p.NodeList, record)
+	return record.Id
+}
+
+func (p *EquilizerMgr) pop_dynamic_node(id string) NodeRecord {
+	var ret NodeRecord
+	for i := 0; i < len(p.NodeList); i++ {
+		if p.NodeList[i].Id == id {
+			ret = p.NodeList[i]
+			p.NodeList = append(p.NodeList[:i], p.NodeList[i+1:]...)
+			break
+		}
+	}
+
+	sid := strings.Split(ret.Id, "D")
+	iid, _ := strconv.Atoi(sid[1])
+	g_db.delete_node(int64(iid))
+
+	return ret
 
 }
 

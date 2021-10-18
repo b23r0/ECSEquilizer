@@ -42,18 +42,13 @@ func connect_db() (*DbMgr, error) {
 }
 
 func (p *DbMgr) init() {
-	_, err := p.Db.Exec(`CREATE TABLE "nodes" (
+	p.Db.Exec(`CREATE TABLE "nodes" (
 		"id"	INTEGER NOT NULL,
 		"ip"	TEXT NOT NULL,
 		"port"	TEXT NOT NULL,
 		"status"	TEXT NOT NULL,
 		PRIMARY KEY("id" AUTOINCREMENT)
 	);`)
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 func (p *DbMgr) close() {

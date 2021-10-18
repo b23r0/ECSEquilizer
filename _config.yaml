@@ -1,6 +1,9 @@
 sys_config: 
     listen: ":8001"
     tcping_port: "25565"
+    work_internal_second: 600
+    https_callback: "https://127.0.0.1/callback"
+    https_callback_auth: "vaild-key"
 aliyun_config: 
     access_key_id: "TTAXXXX7c4Ea"
     access_secret: "29PpXXXXX84xuea"
