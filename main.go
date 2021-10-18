@@ -19,6 +19,7 @@ var g_config GlobalConfig
 var g_ecs ECSMgr
 var g_db *DbMgr
 var g_equilizer EquilizerMgr
+var g_callback CallBackMgr
 
 type GlobalConfig struct {
 	SysConfig struct {
@@ -134,6 +135,12 @@ func worker() {
 				if s.Type == "dynamic" {
 					g_equilizer.pop_dynamic_node(s.Id)
 					g_ecs.delete_ecs(g_config.EcsTemplate.Region, s.InstanceId)
+					err := g_callback.callback(s.Id, "dropped", s.Ip)
+
+					if err != nil {
+						log.Println("callback faild")
+						log.Panicln(err)
+					}
 				}
 			}
 
@@ -153,7 +160,13 @@ func worker() {
 					log.Panic("create ecs faild : " + strconv.FormatInt(int64(err_id), 10))
 					continue
 				}
-				g_equilizer.add_dynamic_node(ip, g_config.SysConfig.TcpingPort, "normal", instanceid)
+				id := g_equilizer.add_dynamic_node(ip, g_config.SysConfig.TcpingPort, "normal", instanceid)
+				err := g_callback.callback(id, "created", ip)
+
+				if err != nil {
+					log.Println("callback faild")
+					log.Panicln(err)
+				}
 			}
 			continue
 		}
@@ -169,6 +182,11 @@ func worker() {
 				if s.Type == "dynamic" {
 					g_equilizer.pop_dynamic_node(s.Id)
 					g_ecs.delete_ecs(g_config.EcsTemplate.Region, s.InstanceId)
+					err := g_callback.callback(s.Id, "dropped", s.Ip)
+					if err != nil {
+						log.Println("callback faild")
+						log.Panicln(err)
+					}
 				}
 
 				should_num--
@@ -188,6 +206,7 @@ func main() {
 	g_config = init_config(path.Join(filepath.Dir(os.Args[0]), "config.yaml"))
 	g_ecs = ECSMgr{AccessKeyId: g_config.AliyunConfig.AccessKeyID, AccessSecret: g_config.AliyunConfig.AccessSecret}
 	g_db, _ = connect_db()
+	g_callback = CallBackMgr{HTTPSCallback: g_callback.HTTPSCallback, HTTPSCallbackAuth: g_callback.HTTPSCallbackAuth}
 
 	e := echo.New()
 	e.GET("/v1/nodes", get_nodes)
