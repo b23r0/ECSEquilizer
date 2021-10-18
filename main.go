@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -20,7 +22,8 @@ var g_equilizer EquilizerMgr
 
 type GlobalConfig struct {
 	SysConfig struct {
-		Listen string `yaml:"listen"`
+		Listen     string `yaml:"listen"`
+		TcpingPort string `yaml:"tcping_port"`
 	} `yaml:"sys_config"`
 	AliyunConfig struct {
 		AccessKeyId  string `yaml:"access_key_id"`
@@ -28,6 +31,14 @@ type GlobalConfig struct {
 	} `yaml:"aliyun_config"`
 	Authorization []string `yaml:"authorization"`
 	StaticNode    []string `yaml:"static_node"`
+	EcsTemplate   struct {
+		Region                 string `yaml:"region"`
+		Imageid                string `yaml:"imageid"`
+		Instancetype           string `yaml:"instancetype"`
+		Securitygroupid        string `yaml:"securitygroupid"`
+		Internetmaxbandwidthin int    `yaml:"internetmaxbandwidthin"`
+		Vswitchid              string `yaml:"vswitchid"`
+	} `yaml:"ecs_template"`
 }
 
 type NodeModel struct {
@@ -82,6 +93,8 @@ func worker() {
 	g_equilizer.update_nodes()
 
 	for {
+		time.Sleep(10 * 60 * time.Second)
+
 		g_equilizer.update_status()
 
 		nodes := g_equilizer.get_nodes()
@@ -118,8 +131,17 @@ func worker() {
 		stage := float64(bad) / float64(len(nodes))
 		if stage > 0.5 {
 			// calc should create dynamic number
-			// should_num := bad - normal
+			should_num := bad - normal
 			// create n dynamic nodes
+
+			for i := 0; i < should_num; i++ {
+				ip, _, err_id := g_ecs.create_ecs(g_config.EcsTemplate.Region, g_config.EcsTemplate.Imageid, g_config.EcsTemplate.Instancetype, g_config.EcsTemplate.Securitygroupid, g_config.EcsTemplate.Internetmaxbandwidthin, g_config.EcsTemplate.Vswitchid)
+				if err_id != 0 {
+					log.Panic("create ecs faild : " + strconv.FormatInt(int64(err_id), 10))
+					continue
+				}
+				g_equilizer.add_dynamic_node(ip, g_config.SysConfig.TcpingPort, "normal")
+			}
 			continue
 		}
 
@@ -157,4 +179,5 @@ func main() {
 	}))
 	go worker()
 	e.Logger.Fatal(e.StartTLS(g_config.SysConfig.Listen, path.Join(filepath.Dir(os.Args[0]), "crt/server.crt"), path.Join(filepath.Dir(os.Args[0]), "crt/server.key")))
+	g_db.close()
 }

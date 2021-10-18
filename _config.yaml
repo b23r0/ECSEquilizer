@@ -1,5 +1,6 @@
 sys_config: 
     listen: ":8001"
+    tcping_port: "25565"
 aliyun_config: 
     access_key_id: "TTAXXXX7c4Ea"
     access_secret: "29PpXXXXX84xuea"
@@ -7,3 +8,10 @@ authorization:
     - "vaild-key"
 static_node:
     - "127.0.0.1:8002"
+ecs_template:
+    region : "cn-hangzhou"
+    imageid : "xxx"
+    instancetype : "ecs.s6-c1m1.small"
+    securitygroupid : "sg-bp1buct0j6jykdapgt4g"
+    internetmaxbandwidthin : 5
+    vswitchid : "vsw-bp1wzgjo111y32fqlmlqt"

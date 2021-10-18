@@ -54,6 +54,31 @@ func (p *EquilizerMgr) update_nodes() {
 	}
 }
 
+func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string) {
+
+	var node DynamicNode
+	node.Ip = ip
+	node.Port = port
+	node.Status = status
+
+	id, err := g_db.add_dynamic_node(&node)
+
+	if err != nil || id == -1 {
+		log.Panic(err)
+	}
+
+	var record NodeRecord
+
+	record.Id = "D" + strconv.FormatInt(id, 10)
+	record.Ip = ip
+	record.Port = port
+	record.Status = status
+	record.Type = "dynamic"
+
+	p.NodeList = append(p.NodeList, record)
+
+}
+
 func (p *EquilizerMgr) update_node_status(id string, status string) {
 	for i := 0; i < len(p.NodeList); i++ {
 		if p.NodeList[i].Id == id {
