@@ -1,4 +1,5 @@
-# ECSEquilizer
+# ECSEquilizer [![Build Status](https://app.travis-ci.com/b23r0/ECSEquilizer.svg?branch=main)](https://app.travis-ci.com/b23r0/ECSEquilizer)
+
 通过阿里云OpenAPI建立一个可伸缩的负载均衡网络调度器。
 
 # 简介
