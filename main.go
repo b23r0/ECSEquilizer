@@ -4,9 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -186,7 +183,7 @@ func worker() {
 
 			// calc should decrease number
 			should_num := normal - bad
-			// uninstall n dynamic nodes
+			// drop n dynamic nodes
 			log.Printf("has 60%% node is normal , drop %d dynamic nodes\n", should_num)
 
 			nodes := g_equilizer.get_nodes()
@@ -220,7 +217,7 @@ func worker() {
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	g_config = init_config(path.Join(filepath.Dir(os.Args[0]), "config.yaml"))
+	g_config = init_config("config.yaml")
 	g_ecs = ECSMgr{AccessKeyId: g_config.AliyunConfig.AccessKeyID, AccessSecret: g_config.AliyunConfig.AccessSecret}
 	g_db, _ = connect_db()
 	g_callback = CallBackMgr{HTTPSCallback: g_callback.HTTPSCallback, HTTPSCallbackAuth: g_callback.HTTPSCallbackAuth}
@@ -245,6 +242,6 @@ func main() {
 	go worker()
 
 	log.Println("listen to " + g_config.SysConfig.Listen)
-	e.Logger.Fatal(e.StartTLS(g_config.SysConfig.Listen, path.Join(filepath.Dir(os.Args[0]), "crt/server.crt"), path.Join(filepath.Dir(os.Args[0]), "crt/server.key")))
+	e.Logger.Fatal(e.StartTLS(g_config.SysConfig.Listen, "crt/server.crt", "crt/server.key"))
 	g_db.close()
 }

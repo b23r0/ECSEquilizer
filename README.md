@@ -37,9 +37,11 @@ dynamic由调度器根据节点集群健康状态调用ECS节点动态伸缩。
 
 编辑 ```./target/config.yaml``` 修改配置信息
 
-``` $> ./target/ecsEquilizer ```
+``` $> cd target ```
 
-# Restful API 身份认证
+``` $> ./ecsEquilizer ```
+
+# HTTP 身份认证
 
 修改`config.yaml`配置文件中的`authorization`参数添加Key 
 
