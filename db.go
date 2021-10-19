@@ -13,10 +13,11 @@ type DbMgr struct {
 }
 
 type DynamicNode struct {
-	Id     int
-	Ip     string
-	Port   string
-	Status string
+	Id         int
+	Ip         string
+	Port       string
+	Status     string
+	InstanceId string
 }
 
 //sqlite password 6HMovdn1osi-7r7
@@ -47,6 +48,7 @@ func (p *DbMgr) init() {
 		"ip"	TEXT NOT NULL,
 		"port"	TEXT NOT NULL,
 		"status"	TEXT NOT NULL,
+		"instanceid"	TEXT NOT NULL,
 		PRIMARY KEY("id" AUTOINCREMENT)
 	);`)
 }
@@ -57,7 +59,7 @@ func (p *DbMgr) close() {
 
 func (p *DbMgr) get_dynamic_nodes() ([]DynamicNode, error) {
 	var ret []DynamicNode
-	rows, err := p.Db.Query("SELECT id , ip , port , status FROM nodes;")
+	rows, err := p.Db.Query("SELECT id , ip , port , status , instanceid FROM nodes;")
 	if err != nil {
 		return ret, err
 	}
@@ -65,7 +67,7 @@ func (p *DbMgr) get_dynamic_nodes() ([]DynamicNode, error) {
 
 	for rows.Next() {
 		var info DynamicNode
-		rows.Scan(&info.Id, &info.Ip, &info.Port, &info.Status)
+		rows.Scan(&info.Id, &info.Ip, &info.Port, &info.Status, &info.InstanceId)
 		ret = append(ret, info)
 	}
 
@@ -73,7 +75,7 @@ func (p *DbMgr) get_dynamic_nodes() ([]DynamicNode, error) {
 }
 
 func (p *DbMgr) add_dynamic_node(node *DynamicNode) (int64, error) {
-	sql := fmt.Sprintf(`insert into nodes(ip , port , status) values("%s","%s","%s");`, node.Ip, node.Port, node.Status)
+	sql := fmt.Sprintf(`insert into nodes(ip , port , status , instanceid ) values("%s","%s","%s","%s");`, node.Ip, node.Port, node.Status, node.InstanceId)
 	log.Println(sql)
 	_, err := p.Db.Exec(sql)
 	if err != nil {

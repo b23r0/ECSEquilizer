@@ -13,7 +13,7 @@ dynamic由调度器根据节点集群健康状态调用ECS节点动态伸缩。
 
 每个节点有三个状态：great，normal，bad
 
-评估方法用tcping，对每个节点的业务TCP端口ping四次求平均值，延迟小于100ms为great，小于1s为Normal，超过1s为Bad
+评估方法用tcping，对每个节点的业务TCP端口ping四次求平均值，延迟小于100ms为great，小于1s为normal，超过1s为bad
 
 ## 负载均衡策略
 
@@ -98,3 +98,6 @@ POST [https_callback]
 
 调度器提供回调，当有节点创建或者被释放，将通知业务节点。
 
+# 注意事项
+
+修改`config.yaml`配置文件中的`work_internal_second`参数设置调度间隔时间，要确保时长足够所需调度的节点启动完成。

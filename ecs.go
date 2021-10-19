@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -48,7 +47,7 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 	if err != nil {
 
 		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
-			log.Println("ECS intailizing , wait a moment.")
+			log.Println("allocate_public_ip : ECS intailizing , wait a moment.")
 			// when ECS intailizing , allocate ip faild , wait to intailized . but just wait once.
 			time.Sleep(5 * time.Second)
 			ip, err = g_ecs.allocate_public_ip(region, id)
@@ -61,7 +60,23 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 		}
 	}
 
-	p.start_ecs(region, id)
+	err = p.start_ecs(region, id)
+
+	if err != nil {
+
+		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
+			log.Println("start_ecs : ECS intailizing , wait a moment.")
+			// when ECS intailizing , start_ecs faild , wait to intailized . but just wait once.
+			time.Sleep(5 * time.Second)
+			err = g_ecs.start_ecs(region, id)
+		}
+
+		//if still faild
+		if err != nil {
+			log.Println(err.Error())
+			return "", "", -2
+		}
+	}
 
 	return ip, id, 0
 }
@@ -104,9 +119,6 @@ func (p *ECSMgr) start_ecs(region string, instanceId string) error {
 	request.InstanceId = instanceId
 
 	_, err = client.StartInstance(request)
-	if err != nil {
-		log.Println(err.Error())
-	}
 	return err
 }
 
@@ -122,9 +134,6 @@ func (p *ECSMgr) allocate_public_ip(region string, instanceId string) (string, e
 	request.InstanceId = instanceId
 
 	response, err := client.AllocatePublicIpAddress(request)
-	if err != nil {
-		fmt.Print(err.Error())
-	}
 
 	return response.IpAddress, err
 }

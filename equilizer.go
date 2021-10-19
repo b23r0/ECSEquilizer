@@ -51,6 +51,7 @@ func (p *EquilizerMgr) update_nodes() {
 		record.Port = s.Port
 		record.Status = s.Status
 		record.Type = "dynamic"
+		record.InstanceId = s.InstanceId
 		p.NodeList = append(p.NodeList, record)
 	}
 }
@@ -61,6 +62,7 @@ func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string, i
 	node.Ip = ip
 	node.Port = port
 	node.Status = status
+	node.InstanceId = instanceid
 
 	id, err := g_db.add_dynamic_node(&node)
 
@@ -75,6 +77,7 @@ func (p *EquilizerMgr) add_dynamic_node(ip string, port string, status string, i
 	record.Port = port
 	record.Status = status
 	record.Type = "dynamic"
+	record.InstanceId = instanceid
 
 	p.NodeList = append(p.NodeList, record)
 	return record.Id
@@ -122,8 +125,8 @@ func (p *EquilizerMgr) ping(ip string, port string) int64 {
 	iport, _ := strconv.Atoi(port)
 
 	target := Target{
-		Timeout:  5 * time.Second,
-		Interval: 1 * time.Second,
+		Timeout:  2 * time.Second,
+		Interval: 100 * time.Millisecond,
 		Host:     ip,
 		Port:     iport,
 		Counter:  4,
@@ -159,7 +162,7 @@ func (p *EquilizerMgr) update_status() {
 	for _, s := range nodes {
 		t := p.ping(s.Ip, s.Port)
 		if t == -1 {
-			p.update_node_status(s.Id, "Bad")
+			p.update_node_status(s.Id, "bad")
 			continue
 		} else {
 			if t < 100 {
