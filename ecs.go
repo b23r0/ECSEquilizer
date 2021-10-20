@@ -47,10 +47,24 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 	if err != nil {
 
 		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
-			log.Println("allocate_public_ip : ECS intailizing , wait a moment.")
-			// when ECS intailizing , allocate ip faild , wait to intailized . but just wait once.
-			time.Sleep(5 * time.Second)
-			ip, err = g_ecs.allocate_public_ip(region, id)
+
+			for {
+				log.Println("allocate_public_ip : ECS intailizing , wait a moment.")
+				// when ECS intailizing , allocate ip faild , wait to intailized . but just wait once.
+				time.Sleep(5 * time.Second)
+				ip, err = g_ecs.allocate_public_ip(region, id)
+
+				if err != nil {
+					if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
+						continue
+					} else {
+						break
+					}
+				} else {
+					break
+				}
+			}
+
 		}
 
 		//if still faild
@@ -65,10 +79,22 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 	if err != nil {
 
 		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
-			log.Println("start_ecs : ECS intailizing , wait a moment.")
-			// when ECS intailizing , start_ecs faild , wait to intailized . but just wait once.
-			time.Sleep(5 * time.Second)
-			err = g_ecs.start_ecs(region, id)
+			for {
+				log.Println("start_ecs : ECS intailizing , wait a moment.")
+				// when ECS intailizing , start_ecs faild , wait to intailized . but just wait once.
+				time.Sleep(5 * time.Second)
+				err = g_ecs.start_ecs(region, id)
+
+				if err != nil {
+					if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
+						continue
+					} else {
+						break
+					}
+				} else {
+					break
+				}
+			}
 		}
 
 		//if still faild
