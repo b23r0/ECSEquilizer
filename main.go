@@ -133,11 +133,13 @@ func worker() {
 					g_equilizer.pop_dynamic_node(s.Id)
 					log.Printf("delete ecs [%s , %s]", g_config.EcsTemplate.Region, s.InstanceId)
 					g_ecs.delete_ecs(g_config.EcsTemplate.Region, s.InstanceId)
-					err := g_callback.callback(s.Id, "dropped", s.Ip)
+					if len(g_config.SysConfig.HTTPSCallback) != 0 {
+						err := g_callback.callback(s.Id, "dropped", s.Ip)
 
-					if err != nil {
-						log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
-						log.Println(err)
+						if err != nil {
+							log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
+							log.Println(err)
+						}
 					}
 				}
 			}
@@ -163,12 +165,16 @@ func worker() {
 					continue
 				}
 				id := g_equilizer.add_dynamic_node(ip, g_config.SysConfig.TcpingPort, "normal", instanceid)
-				err := g_callback.callback(id, "created", ip)
 
-				if err != nil {
-					log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
-					log.Println(err)
+				if len(g_config.SysConfig.HTTPSCallback) != 0 {
+					err := g_callback.callback(id, "created", ip)
+
+					if err != nil {
+						log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
+						log.Println(err)
+					}
 				}
+
 			}
 			continue
 		}
@@ -196,11 +202,15 @@ func worker() {
 						log.Panic("delete ecs faild : " + strconv.FormatInt(int64(retcode), 10))
 						continue
 					}
-					err := g_callback.callback(s.Id, "dropped", s.Ip)
-					if err != nil {
-						log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
-						log.Println(err)
+
+					if len(g_config.SysConfig.HTTPSCallback) != 0 {
+						err := g_callback.callback(s.Id, "dropped", s.Ip)
+						if err != nil {
+							log.Printf("callback faild : %s\n", g_config.SysConfig.HTTPSCallback)
+							log.Println(err)
+						}
 					}
+
 				}
 
 				should_num--
