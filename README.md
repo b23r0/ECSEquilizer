@@ -82,6 +82,8 @@ Result:
 
 设置 `https_callback_auth` 参数，将在回调请求的HTTP头参数中加入`Authorization`进行身份认证
 
+如果`https_callback`参数为空字符串，则不使用回调。
+
 ```
 
 POST [https_callback]
