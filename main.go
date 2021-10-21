@@ -216,6 +216,13 @@ func worker() {
 }
 
 func main() {
+
+	logWriter := &TimeWriter{
+		Dir:        "./log",
+		Compress:   true,
+		ReserveDay: 30,
+	}
+	log.SetOutput(logWriter)
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	g_config = init_config("config.yaml")
 	g_ecs = ECSMgr{AccessKeyId: g_config.AliyunConfig.AccessKeyID, AccessSecret: g_config.AliyunConfig.AccessSecret}
