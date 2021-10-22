@@ -52,7 +52,7 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 				log.Println("allocate_public_ip : ECS intailizing , wait a moment.")
 				// when ECS intailizing , allocate ip faild , wait to intailized . but just wait once.
 				time.Sleep(5 * time.Second)
-				ip, err = g_ecs.allocate_public_ip(region, id)
+				ip, err = p.allocate_public_ip(region, id)
 
 				if err != nil {
 					if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
@@ -122,13 +122,33 @@ func (p *ECSMgr) delete_ecs(region string, instanceId string) int {
 
 	_, err = client.DeleteInstance(request)
 	if err != nil {
-		log.Println(err.Error())
-		if strings.Contains(err.Error(), "IncorrectInstanceStatus.Initializing") {
-			return -1
-		} else {
-			return -2
+		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
+
+			for {
+				log.Println("delete_ecs : ECS intailizing , wait a moment.")
+				// when ECS intailizing , start_ecs faild , wait to intailized . but just wait once.
+				time.Sleep(5 * time.Second)
+				_, err = client.DeleteInstance(request)
+
+				if err != nil {
+					if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
+						continue
+					} else {
+						break
+					}
+				} else {
+					break
+				}
+			}
 		}
 	}
+
+	//if still faild
+	if err != nil {
+		log.Println(err.Error())
+		return -1
+	}
+
 	return 0
 }
 
