@@ -10,7 +10,7 @@ all:
 	rm -rf server.crt
 	rm -rf server.key
 	rm -rf server.csr
-	go build -o target/ecsEquilizer .
+	CGO_ENABLED=1 go build -a -ldflags '-extldflags "-static"' -o target/ecsEquilizer .
 tidy:
 	go mod tidy
 
