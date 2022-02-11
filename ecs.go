@@ -29,8 +29,9 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 	request.ImageId = imageId
 	request.InstanceType = instanceType //"ecs.s6-c1m1.small"
 	request.InternetChargeType = "PayByBandwidth"
-	request.SecurityGroupId = securityGroupId                                    //"sg-bp1buct0j6jykdapgt4g"
-	request.InternetMaxBandwidthIn = requests.NewInteger(internetMaxBandwidthIn) //requests.NewInteger(5)
+	request.SecurityGroupId = securityGroupId                                     //"sg-bp1buct0j6jykdapgt4g"
+	request.InternetMaxBandwidthIn = requests.NewInteger(internetMaxBandwidthIn)  //requests.NewInteger(5)
+	request.InternetMaxBandwidthOut = requests.NewInteger(internetMaxBandwidthIn) //requests.NewInteger(5)
 	request.PasswordInherit = requests.NewBoolean(true)
 	request.InstanceChargeType = "PostPaid"
 	request.VSwitchId = vSwitchId
