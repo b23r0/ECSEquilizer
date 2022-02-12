@@ -35,7 +35,6 @@ func (p *ECSMgr) create_ecs(region string, imageId string, instanceType string, 
 	request.PasswordInherit = requests.NewBoolean(true)
 	request.InstanceChargeType = "PostPaid"
 	request.VSwitchId = vSwitchId
-	request.InternetMaxBandwidthOut = requests.NewInteger(5)
 
 	response, err := client.CreateInstance(request)
 	if err != nil {
