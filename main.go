@@ -54,6 +54,10 @@ type GetNodesRetModel struct {
 	Nodes []NodeModel `json:"nodes"`
 }
 
+type SimpleModel struct {
+	RetCode int `json:"retcode"`
+}
+
 func get_nodes(c echo.Context) (err error) {
 
 	ret := GetNodesRetModel{}
@@ -69,6 +73,18 @@ func get_nodes(c echo.Context) (err error) {
 
 		ret.Nodes = append(ret.Nodes, node)
 	}
+
+	return c.JSON(http.StatusOK, &ret)
+}
+
+func mark_node(c echo.Context) (err error) {
+
+	ret := SimpleModel{RetCode: 0}
+
+	id := c.FormValue("id")
+	status := c.FormValue("status")
+
+	g_equilizer.update_node_status(id, status)
 
 	return c.JSON(http.StatusOK, &ret)
 }
@@ -95,7 +111,7 @@ func worker() {
 	for {
 		time.Sleep(time.Duration(g_config.SysConfig.WorkInternalSecond) * time.Second)
 
-		g_equilizer.update_status()
+		//g_equilizer.update_status()
 
 		nodes := g_equilizer.get_nodes()
 
@@ -128,10 +144,11 @@ func worker() {
 			//drop all dynamic
 			log.Println("all static node is normal , if has dynamic node will be drop")
 			nodes := g_equilizer.get_nodes()
+			delete_ready := make([]string, 0)
 			for _, s := range nodes {
 				if s.Type == "dynamic" {
-					g_equilizer.pop_dynamic_node(s.Id)
-					log.Printf("delete ecs [%s , %s]", g_config.EcsTemplate.Region, s.InstanceId)
+					delete_ready = append(delete_ready, s.Id)
+					log.Printf("delete ecs [%s , %s , %s]", s.Id, g_config.EcsTemplate.Region, s.InstanceId)
 					g_ecs.delete_ecs(g_config.EcsTemplate.Region, s.InstanceId)
 					if len(g_config.SysConfig.HTTPSCallback) != 0 {
 						err := g_callback.callback(s.Id, "dropped", s.Ip)
@@ -144,16 +161,24 @@ func worker() {
 				}
 			}
 
+			for i := 0; i < len(delete_ready); i++ {
+				g_equilizer.pop_dynamic_node(delete_ready[i])
+			}
+
 			continue
 		}
 
 		// 50% node is bad
 		stage := float64(bad) / float64(len(nodes))
-		if stage > 0.5 {
+		if stage >= 0.5 {
 
 			// calc should create dynamic number
 			should_num := bad - normal
+
 			// create n dynamic nodes
+			if should_num == 0 {
+				should_num = 1
+			}
 
 			log.Printf("50%% node is bad , create %d dynamic nodes\n", should_num)
 
@@ -165,7 +190,7 @@ func worker() {
 					continue
 				}
 				id := g_equilizer.add_dynamic_node(ip, g_config.SysConfig.TcpingPort, "normal", instanceid)
-
+				log.Printf("create node [%s]", id)
 				if len(g_config.SysConfig.HTTPSCallback) != 0 {
 					err := g_callback.callback(id, "created", ip)
 
@@ -179,30 +204,32 @@ func worker() {
 			continue
 		}
 
-		// 60% node is normal
-		if stage < 0.4 {
+		// 70% node is normal
+		if stage < 0.3 {
 
 			if (len(nodes) - static) == 0 {
-				log.Printf("60%% static node is normal , has not any action\n")
+				log.Printf("70%% static node is normal , has not any action\n")
 				continue
 			}
 
 			// calc should decrease number
 			should_num := normal - bad
 			// drop n dynamic nodes
-			log.Printf("has 60%% node is normal , drop %d dynamic nodes\n", should_num)
+			log.Printf("has 70%% node is normal , drop %d dynamic nodes\n", should_num)
 
 			nodes := g_equilizer.get_nodes()
+			delete_ready := make([]string, 0)
 			for _, s := range nodes {
 				if s.Type == "dynamic" {
-					g_equilizer.pop_dynamic_node(s.Id)
-					log.Printf("delete ecs [%s , %s]", g_config.EcsTemplate.Region, s.InstanceId)
+					log.Printf("delete ecs [%s , %s , %s]\n", s.Id, g_config.EcsTemplate.Region, s.InstanceId)
+					delete_ready = append(delete_ready, s.Id)
 					retcode := g_ecs.delete_ecs(g_config.EcsTemplate.Region, s.InstanceId)
 					if retcode != 0 {
 						log.Panic("delete ecs faild : " + strconv.FormatInt(int64(retcode), 10))
 						continue
 					}
 
+					should_num--
 					if len(g_config.SysConfig.HTTPSCallback) != 0 {
 						err := g_callback.callback(s.Id, "dropped", s.Ip)
 						if err != nil {
@@ -213,12 +240,15 @@ func worker() {
 
 				}
 
-				should_num--
-
 				if should_num == 0 {
 					break
 				}
 			}
+
+			for i := 0; i < len(delete_ready); i++ {
+				g_equilizer.pop_dynamic_node(delete_ready[i])
+			}
+
 			continue
 		}
 	}
@@ -241,6 +271,7 @@ func main() {
 
 	e := echo.New()
 	e.GET("/v1/nodes", get_nodes)
+	e.POST("/v1/mark_node", mark_node)
 
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 		Validator: func(key string, _ echo.Context) (bool, error) {
@@ -255,7 +286,7 @@ func main() {
 	}))
 
 	g_equilizer.update_nodes()
-	g_equilizer.update_status()
+	//g_equilizer.update_status()
 	go worker()
 
 	log.Println("listen to " + g_config.SysConfig.Listen)

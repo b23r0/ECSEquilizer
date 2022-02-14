@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -34,6 +35,7 @@ func (p *EquilizerMgr) update_nodes() {
 		record.Port = tmp[1]
 		record.Id = "S" + fmt.Sprint(i)
 		record.Type = "static"
+		record.Status = "normal"
 		i++
 		p.NodeList = append(p.NodeList, record)
 	}
@@ -119,6 +121,14 @@ func (p *EquilizerMgr) get_nodes() []NodeRecord {
 	return p.NodeList
 }
 
+func (p *EquilizerMgr) httping(surl string) int64 {
+	u, err := url.Parse(surl)
+	if err != nil {
+		return -1
+	}
+	return httping("GET", u, 4, "")
+}
+
 func (p *EquilizerMgr) ping(ip string, port string) int64 {
 	pinger := NewTCPing()
 
@@ -160,7 +170,8 @@ func (p *EquilizerMgr) update_status() {
 	nodes := p.get_nodes()
 
 	for _, s := range nodes {
-		t := p.ping(s.Ip, s.Port)
+		//t := p.ping(s.Ip, s.Port)
+		t := p.httping("http://" + s.Ip + ":" + s.Port)
 		if t == -1 {
 			p.update_node_status(s.Id, "bad")
 			continue

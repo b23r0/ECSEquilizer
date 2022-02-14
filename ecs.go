@@ -125,7 +125,7 @@ func (p *ECSMgr) delete_ecs(region string, instanceId string) int {
 		if strings.Contains(err.Error(), "IncorrectInstanceStatus") {
 
 			for {
-				log.Println("delete_ecs : ECS intailizing , wait a moment.")
+				log.Println("delete_ecs : ECS unintailizing , wait a moment.")
 				// when ECS intailizing , start_ecs faild , wait to intailized . but just wait once.
 				time.Sleep(5 * time.Second)
 				_, err = client.DeleteInstance(request)
